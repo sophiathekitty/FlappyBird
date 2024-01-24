@@ -32,16 +32,20 @@ namespace IngameScript
             int frameDelay = 0;
             int frameDelayMax = 5;
             GameInput input;
-            public Bird(Vector2 position, string sprites,GameInput input) : base(ScreenSpriteAnchor.TopLeft, position, DEFAULT_PIXEL_SCALE, Vector2.Zero, sprites, TextAlignment.LEFT)
+            public Bird(Vector2 position, string sprites,GameInput input) : base(position, DEFAULT_PIXEL_SCALE, Vector2.Zero, sprites)
             {
-                char pinkPixel = sprites[0];
-                Data = sprites.Replace(pinkPixel, INVISIBLE);
                 this.sprites[0] = getPixels(0, 0, (int)(Size.X/3), (int)Size.Y);
                 this.sprites[1] = getPixels((int)(Size.X / 3), 0, (int)(Size.X / 3), (int)Size.Y);
                 this.sprites[2] = getPixels((int)(Size.X / 3)*2, 0, (int)(Size.X / 3), (int)Size.Y);
-                Data = this.sprites[0];
-                string[] lines = Data.Split('\n');
+                // recalculate size
+                string[] lines = this.sprites[0].Split('\n');
                 Size = new Vector2(lines[0].Length, lines.Length);
+                // replace pink pixels with transparent pixels
+                this.sprites[0] = this.sprites[0].Replace(IGNORE.ToString(),INVISIBLE);
+                this.sprites[1] = this.sprites[1].Replace(IGNORE.ToString(), INVISIBLE);
+                this.sprites[2] = this.sprites[2].Replace(IGNORE.ToString(), INVISIBLE);
+                // set default sprite
+                Data = this.sprites[0];
                 this.input = input;
             }
             public override MySprite ToMySprite(RectangleF _viewport)
@@ -56,7 +60,6 @@ namespace IngameScript
                 {
                     frameDelay = 0;
                     frame--;
-                    if (frame < 0) frame = 0;
                     Data = sprites[frame];
                 }
                 return base.ToMySprite(_viewport);

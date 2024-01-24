@@ -265,9 +265,10 @@ namespace IngameScript
         {
             public static float PIXEL_TO_SCREEN_RATIO = 30f; // line height of monospace font at 1f scale
             public static float DEFAULT_PIXEL_SCALE = 0.1f; // the default scale for a monospace image
-            public static char INVISIBLE = ''; //(char)0xE100;// maybe? 
+            public static string INVISIBLE = ""; //(char)0xE100;// maybe? 
+            public static char IGNORE = ''; // fc00fc
 
-            public RasterSprite(ScreenSpriteAnchor anchor, Vector2 position, float scale, Vector2 size, string data, TextAlignment alignment = TextAlignment.LEFT) : base(anchor, position, scale, size, Color.White, "Monospace", data, TextAlignment.LEFT, SpriteType.TEXT)
+            public RasterSprite(Vector2 position, float scale, Vector2 size, string data) : base(ScreenSpriteAnchor.TopLeft, position, scale, size, Color.White, "Monospace", data, TextAlignment.LEFT, SpriteType.TEXT)
             {
                 if(size == Vector2.Zero)
                 {
@@ -495,6 +496,114 @@ namespace IngameScript
                     for (int x1 = -r; x1 <= r; x1++)
                         if (x1 * x1 + y1 * y1 <= r * r)
                             setPixelRGB(x + x1, y + y1, red, green, blue);
+            }
+            // intesect with another raster sprite that might not have the same position in screen space
+            // and turn the intersecting pixels red
+            public bool Intersect(RasterSprite sprite, bool highlight = false)
+            {
+                GridInfo.Echo("intersect check");
+                Vector2 pixelPos = ScreenPosToPixelPos(sprite.Position);
+                if(pixelPos.X+sprite.Size.X < 0 || pixelPos.X >= Size.X || pixelPos.Y + sprite.Size.Y < 0 || pixelPos.Y >= Size.Y) return false;
+                // there's overlap in the sprites. do any pixels overlap?
+                int x1 = (int)Math.Max(0, pixelPos.X);
+                int y1 = (int)Math.Max(0, pixelPos.Y);
+                int x2 = (int)Math.Min(Size.X, pixelPos.X + sprite.Size.X);
+                int y2 = (int)Math.Min(Size.Y, pixelPos.Y + sprite.Size.Y);
+                bool intersect = false;
+                string SourceColider = Data.Replace(INVISIBLE, IGNORE.ToString());
+                if (highlight) Data = SourceColider;
+                string TargetColider = sprite.Data.Replace(INVISIBLE, IGNORE.ToString());
+                for (int y = y1; y < y2; y++)
+                {
+                    for (int x = x1; x < x2; x++)
+                    {
+                        int sourceIndex = (int)(y * (Size.X + 1) + x);
+                        int targetIndex = (int)((y - (int)pixelPos.Y) * ((int)sprite.Size.X + 1) + (x - (int)pixelPos.X));
+                        GridInfo.Echo("local pos: "+x.ToString()+","+y.ToString() +" | "+ sourceIndex +"/"+SourceColider.Length);
+                        GridInfo.Echo("sprite pos: " + (x - (int)pixelPos.X).ToString() + "," + (y - (int)pixelPos.Y).ToString() + " | " + targetIndex +"/"+TargetColider.Length);
+                        // check if the pixel is not transparent in both sprites and if not, turn it red
+                        if (sourceIndex < SourceColider.Length && targetIndex < TargetColider.Length && SourceColider[sourceIndex] != IGNORE && TargetColider[targetIndex] != IGNORE)
+                        {
+                            intersect = true;
+                            if (highlight) setPixelRGB(x, y, 255, 0, 0);
+                            else return true;
+                        }
+                    }
+                }
+                if(highlight) Data = Data.Replace(IGNORE.ToString(), INVISIBLE);
+                return intersect;
+            }
+            //flip the sprite horizontally
+            public void FlipHorizontal()
+            {
+                string[] lines = Data.Split('\n');
+                string newData = "";
+                for (int y = 0; y < lines.Length; y++)
+                {
+                    for (int x = lines[y].Length - 1; x >= 0; x--)
+                    {
+                        newData += lines[y][x];
+                    }
+                    newData += "\n";
+                }
+                Data = newData;
+            }
+            //flip the sprite vertically
+            public void FlipVertical()
+            {
+                string[] lines = Data.Split('\n');
+                string newData = "";
+                for (int y = lines.Length - 1; y >= 0; y--)
+                {
+                    newData += lines[y];
+                    newData += "\n";
+                }
+                Data = newData;
+            }
+            //rotate the sprite 90 degrees clockwise
+            public void Rotate90()
+            {
+                string[] lines = Data.Split('\n');
+                string newData = "";
+                for (int x = 0; x < lines[0].Length; x++)
+                {
+                    for (int y = lines.Length - 1; y >= 0; y--)
+                    {
+                        newData += lines[y][x];
+                    }
+                    newData += "\n";
+                }
+                Data = newData;
+            }
+            //rotate the sprite 90 degrees counter clockwise
+            public void Rotate270()
+            {
+                string[] lines = Data.Split('\n');
+                string newData = "";
+                for (int x = lines[0].Length - 1; x >= 0; x--)
+                {
+                    for (int y = 0; y < lines.Length; y++)
+                    {
+                        newData += lines[y][x];
+                    }
+                    newData += "\n";
+                }
+                Data = newData;
+            }
+            //rotate the sprite 180 degrees
+            public void Rotate180()
+            {
+                string[] lines = Data.Split('\n');
+                string newData = "";
+                for (int y = lines.Length - 1; y >= 0; y--)
+                {
+                    for (int x = lines[y].Length - 1; x >= 0; x--)
+                    {
+                        newData += lines[y][x];
+                    }
+                    newData += "\n";
+                }
+                Data = newData;
             }
         }
         //----------------------------------------------------------------------

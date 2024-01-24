@@ -45,7 +45,7 @@ namespace IngameScript
             public static IMyShipController GetPlayer()
             {
                 if (controllers.Count == 1) return controllers[0];
-                return controllers.Find(x => x.CustomName.ToLower().Contains("player"));
+                return controllers.Find(x => x.CustomName.ToLower().Contains("controls"));
             }
             public static IMyTextSurface GetTextSurface(string name)
             {

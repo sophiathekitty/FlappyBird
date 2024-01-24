@@ -26,10 +26,12 @@ namespace IngameScript
         FlappyGame game;
         public Program()
         {
+            Echo("Flappy Bird Booting.....");
             GridInfo.Init("FlappyBird", this);
             GridBlocks.InitBlocks(GridTerminalSystem);
             Runtime.UpdateFrequency = UpdateFrequency.Update1;
             game = new FlappyGame(GridBlocks.GetTextSurface("Main Display"));
+            Echo("FlappyGame Initialized");
         }
 
         public void Save()

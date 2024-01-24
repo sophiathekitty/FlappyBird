@@ -31,8 +31,10 @@ namespace IngameScript
             GameInput input;
             public FlappyGame(IMyTextSurface drawingSurface) : base(drawingSurface)
             {
+                //RasterSprite.DEFAULT_PIXEL_SCALE = 0.05f;
                 input = new GameInput(GridBlocks.GetPlayer());
-                bird = new Bird((Size/2) - (bird.PixelToScreen(bird.Size)/2), SpriteLoader.BirdSprites, input);
+                bird = new Bird(Size/2, SpriteLoader.BirdSprites, input);
+                bird.Position = (Size/2) - (bird.PixelToScreen(bird.Size)/2);
                 AddSprite(bird);
             }
             public override void Update()
