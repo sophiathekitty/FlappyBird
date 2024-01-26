@@ -27,11 +27,16 @@ namespace IngameScript
         //----------------------------------------------------------------------
         public class Bird : RasterSprite
         {
+            public static readonly float GRAVITY = 0.1f;
+            public static readonly float JUMP = -4f;
+            public static readonly float TERMINAL_VELOCITY = 8f;
             string[] sprites = new string[3];
             int frame = 0;
             int frameDelay = 0;
             int frameDelayMax = 5;
             GameInput input;
+            Vector2 velocity = Vector2.Zero;
+            public Vector2 Velocity { get { return velocity; } set { velocity = value; } }
             public Bird(Vector2 position, string sprites,GameInput input) : base(position, DEFAULT_PIXEL_SCALE, Vector2.Zero, sprites)
             {
                 this.sprites[0] = getPixels(0, 0, (int)(Size.X/3), (int)Size.Y);
@@ -48,21 +53,37 @@ namespace IngameScript
                 Data = this.sprites[0];
                 this.input = input;
             }
-            public override MySprite ToMySprite(RectangleF _viewport)
+            public void Update(Vector2 _viewport)
             {
-                if (input.PlayerPresent && input.SpacePressed)
+                if (input.PlayerPresent)
                 {
-                    frameDelay = 0;
-                    frame = 2;
-                    Data = sprites[frame];
+                    if (input.SpacePressed)
+                    {
+                        frameDelay = 0;
+                        frame = 2;
+                        Data = sprites[frame];
+                        velocity = new Vector2(0, JUMP);
+                    }
+                    else if (frame > 0 && frameDelay++ >= frameDelayMax)
+                    {
+                        frameDelay = 0;
+                        frame--;
+                        Data = sprites[frame];
+                    }
+
+                    velocity += new Vector2(0, GRAVITY);
+                    if(velocity.Y > TERMINAL_VELOCITY)
+                    {
+                        velocity.Y = TERMINAL_VELOCITY;
+                    }   
+                    Position += velocity;
+                    if(Position.Y > _viewport.Y - 50 - PixelToScreen(Size).Y)
+                    {
+                        Position = new Vector2(Position.X, _viewport.Y - 50 - PixelToScreen(Size).Y);
+                        velocity = Vector2.Zero;
+                        FlappyGame.GameOver();
+                    }
                 }
-                else if (frame > 0 && frameDelay++ >= frameDelayMax)
-                {
-                    frameDelay = 0;
-                    frame--;
-                    Data = sprites[frame];
-                }
-                return base.ToMySprite(_viewport);
             }
         }
         //----------------------------------------------------------------------

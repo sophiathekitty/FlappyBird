@@ -43,6 +43,7 @@
     <Compile Include="GameInput.cs" />
     <Compile Include="GridBlocks.cs" />
     <Compile Include="GridInfo.cs" />
+    <Compile Include="HorizontalParalaxSprite.cs" />
     <Compile Include="MDK\Bootstrapper.cs" />
     <AdditionalFiles Include="MDK\MDK.options.props">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -50,6 +51,7 @@
     <AdditionalFiles Include="MDK\MDK.paths.props">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AdditionalFiles>
+    <Compile Include="PipeGate.cs" />
     <Compile Include="Program.cs" />
     <AdditionalFiles Include="Instructions.readme" />
     <AdditionalFiles Include="thumb.png" />

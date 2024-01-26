@@ -57,6 +57,10 @@ namespace IngameScript
             {
                 get { return _drawingSurface.SurfaceSize; }
             }
+            public RectangleF Viewport
+            {
+                get { return _viewport; }
+            }
             //
             // constructor
             //
@@ -261,11 +265,14 @@ namespace IngameScript
             void AddToScreen(Screen screen);
             void RemoveToScreen(Screen screen);
         }
+        //----------------------------------------------------------------------
+        // RasterSprite - a sprite made of monospace font pixels
+        //----------------------------------------------------------------------
         public class RasterSprite : ScreenSprite
         {
-            public static float PIXEL_TO_SCREEN_RATIO = 30f; // line height of monospace font at 1f scale
+            public static float PIXEL_TO_SCREEN_RATIO = 28f; // line height of monospace font at 1f scale
             public static float DEFAULT_PIXEL_SCALE = 0.1f; // the default scale for a monospace image
-            public static string INVISIBLE = ""; //(char)0xE100;// maybe? 
+            public static string INVISIBLE = ""; // (char)0xE070; // single space
             public static char IGNORE = ''; // fc00fc
 
             public RasterSprite(Vector2 position, float scale, Vector2 size, string data) : base(ScreenSpriteAnchor.TopLeft, position, scale, size, Color.White, "Monospace", data, TextAlignment.LEFT, SpriteType.TEXT)
@@ -275,6 +282,10 @@ namespace IngameScript
                     string[] lines = data.Split('\n');
                     Size = new Vector2(lines[0].Length, lines.Length);
                 }
+                // decompress the transparent data
+                Data = Data.Replace("", INVISIBLE+INVISIBLE); // double space
+                Data = Data.Replace("", INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE); // quad space
+                Data = Data.Replace("", INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE+INVISIBLE); // 8 space
             }
             public Vector2 PixelToScreen(Vector2 pixel)
             {
@@ -501,7 +512,6 @@ namespace IngameScript
             // and turn the intersecting pixels red
             public bool Intersect(RasterSprite sprite, bool highlight = false)
             {
-                GridInfo.Echo("intersect check");
                 Vector2 pixelPos = ScreenPosToPixelPos(sprite.Position);
                 if(pixelPos.X+sprite.Size.X < 0 || pixelPos.X >= Size.X || pixelPos.Y + sprite.Size.Y < 0 || pixelPos.Y >= Size.Y) return false;
                 // there's overlap in the sprites. do any pixels overlap?
@@ -511,16 +521,20 @@ namespace IngameScript
                 int y2 = (int)Math.Min(Size.Y, pixelPos.Y + sprite.Size.Y);
                 bool intersect = false;
                 string SourceColider = Data.Replace(INVISIBLE, IGNORE.ToString());
+                SourceColider = SourceColider.Replace("\r\n", "\n");
                 if (highlight) Data = SourceColider;
                 string TargetColider = sprite.Data.Replace(INVISIBLE, IGNORE.ToString());
+                TargetColider = TargetColider.Replace("\r\n", "\n");
                 for (int y = y1; y < y2; y++)
                 {
                     for (int x = x1; x < x2; x++)
                     {
                         int sourceIndex = (int)(y * (Size.X + 1) + x);
                         int targetIndex = (int)((y - (int)pixelPos.Y) * ((int)sprite.Size.X + 1) + (x - (int)pixelPos.X));
-                        GridInfo.Echo("local pos: "+x.ToString()+","+y.ToString() +" | "+ sourceIndex +"/"+SourceColider.Length);
-                        GridInfo.Echo("sprite pos: " + (x - (int)pixelPos.X).ToString() + "," + (y - (int)pixelPos.Y).ToString() + " | " + targetIndex +"/"+TargetColider.Length);
+                        //int sourceIndex = (int)(y * (Size.X + 1) + x);
+                        //int targetIndex = (int)((y - (int)pixelPos.Y) * ((int)sprite.Size.X + 1) + (x - (int)pixelPos.X));
+                        //GridInfo.Echo("local pos: "+x.ToString()+","+y.ToString() +" | "+ sourceIndex +"/"+SourceColider.Length);
+                        //GridInfo.Echo("sprite pos: " + (x - (int)pixelPos.X).ToString() + "," + (y - (int)pixelPos.Y).ToString() + " | " + targetIndex +"/"+TargetColider.Length);
                         // check if the pixel is not transparent in both sprites and if not, turn it red
                         if (sourceIndex < SourceColider.Length && targetIndex < TargetColider.Length && SourceColider[sourceIndex] != IGNORE && TargetColider[targetIndex] != IGNORE)
                         {
@@ -604,6 +618,118 @@ namespace IngameScript
                     newData += "\n";
                 }
                 Data = newData;
+            }
+        }
+        public class BitmapFontSprite : IScreenSpriteProvider
+        {
+            List<RasterSprite> sprites = new List<RasterSprite>();
+            Dictionary<char, string> characters = new Dictionary<char, string>();
+            Screen screen;
+            string text;
+            float advanceWdith;
+            public string Text
+            {
+                get { return text; }
+                set
+                {
+                    if(value == text) return;
+                    text = value;
+                    applyText();
+                }
+            }
+            public bool Visible
+            {
+                get { return sprites[0].Visible; }
+                set
+                {
+                    foreach (RasterSprite sprite in sprites)
+                    {
+                        sprite.Visible = value;
+                    }
+                }
+            }
+            Vector2 position;
+            TextAlignment alignment;
+            public BitmapFontSprite(Vector2 position, string font, string charMap, string text, TextAlignment alignment = TextAlignment.LEFT)
+            {
+                this.position = position;
+                this.text = text;
+                this.alignment = alignment;
+                // load the font
+                RasterSprite fontSprite = new RasterSprite(Vector2.Zero, RasterSprite.DEFAULT_PIXEL_SCALE, Vector2.Zero, font);
+                // load the character map
+                string[] lines = charMap.Split('\n');
+                int charWidth = (int)(fontSprite.Size.X / lines[0].Length);
+                int charHeight = (int)(fontSprite.Size.Y / lines.Length);
+                advanceWdith = fontSprite.PixelToScreen(new Vector2(charWidth,0)).X;
+                // create the character sprites
+                for (int y = 0; y < lines.Length; y++)
+                {
+                    for (int x = 0; x < lines[y].Length; x++)
+                    {
+                        characters.Add(lines[y][x], fontSprite.getPixels(x * charWidth, y * charHeight, charWidth, charHeight));
+                        characters[lines[y][x]] = characters[lines[y][x]].Replace(RasterSprite.IGNORE.ToString(), RasterSprite.INVISIBLE);
+                    }
+                }
+                
+                // apply the text
+                applyText();
+            }
+            void applyText()
+            {
+                // remove all the sprites
+                if(screen != null)
+                {
+                    foreach (RasterSprite sprite in sprites)
+                    {
+                        screen.RemoveSprite(sprite);
+                    }
+                }
+                sprites.Clear();
+                // add the sprites
+                string[] lines = text.Split('\n');
+                Vector2 pos = position;
+                
+                foreach (string line in lines)
+                {
+                    switch (alignment)
+                    {
+                        case TextAlignment.LEFT:
+                            pos.X = position.X;
+                            break;
+                        case TextAlignment.CENTER:
+                            pos.X -= (line.Length *advanceWdith) / 2f;
+                            break;
+                        case TextAlignment.RIGHT:
+                            pos.X -= line.Length * advanceWdith;
+                            break;
+                    }
+                    foreach (char c in line)
+                    {
+                        if (characters.ContainsKey(c))
+                        {
+                            RasterSprite sprite = new RasterSprite(pos, RasterSprite.DEFAULT_PIXEL_SCALE, Vector2.Zero, characters[c]);
+                            sprites.Add(sprite);
+                            if(screen != null) screen.AddSprite(sprite);
+                            pos.X += sprite.PixelToScreen(sprite.Size).X;
+                        }
+                    }
+                }
+            }
+            public void AddToScreen(Screen screen)
+            {
+                this.screen = screen;
+                foreach (RasterSprite sprite in sprites)
+                {
+                    screen.AddSprite(sprite);
+                }
+            }
+            public void RemoveToScreen(Screen screen)
+            {
+                foreach (RasterSprite sprite in sprites)
+                {
+                    screen.RemoveSprite(sprite);
+                }
             }
         }
         //----------------------------------------------------------------------

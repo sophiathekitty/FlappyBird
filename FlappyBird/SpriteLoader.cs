@@ -39,6 +39,78 @@ namespace IngameScript
                     return "";
                 }
             }
+            public static string Pipe
+            {
+                get
+                {
+                    IMyLightingBlock block = GridBlocks.GetLight("Pipe");
+                    if (block != null)
+                    {
+                        return block.CustomData;
+                    }
+                    return "";
+                }
+            }
+            public static string Ground
+            {
+                get
+                {
+                    IMyLightingBlock block = GridBlocks.GetLight("Base");
+                    if (block != null)
+                    {
+                        return block.CustomData;
+                    }
+                    return "";
+                }
+            }
+            public static string Background
+            {
+                get
+                {
+                    IMyLightingBlock block = GridBlocks.GetLight("Background");
+                    if (block != null)
+                    {
+                        return block.CustomData;
+                    }
+                    return "";
+                }
+            }
+            public static string Font
+            {
+                get
+                {
+                    IMyShipController controller = GridBlocks.GetPlayer();
+                    if (controller != null)
+                    {
+                        return controller.CustomData;
+                    }
+                    return "";
+                }
+            }
+            public static string Title
+            {
+                get
+                {
+                    IMyTextPanel panel = GridBlocks.GetTextPanel("Sign");
+                    if (panel != null)
+                    {
+                        return panel.GetText();
+                    }
+                    return "";
+                }
+            }
+            public static string GameOver
+            {
+                get
+                {
+                    IMyTextPanel panel = GridBlocks.GetTextPanel("Sign");
+                    if (panel != null)
+                    {
+                        return panel.CustomData;
+                    }
+                    return "";
+                }
+            }
         }
     }
 }
