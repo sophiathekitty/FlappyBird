@@ -57,6 +57,7 @@
     <AdditionalFiles Include="thumb.png" />
     <AdditionalFiles Include="MDK\whitelist.cache" />
     <Compile Include="Screen.cs" />
+    <Compile Include="Sign.cs" />
     <Compile Include="SpriteLoader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

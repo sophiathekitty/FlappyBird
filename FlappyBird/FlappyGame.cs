@@ -69,7 +69,7 @@ namespace IngameScript
                 GameOver += isGameOver;
                 scoreDisplay = new BitmapFontSprite(new Vector2(Size.X/2, Size.Y*0.01f), SpriteLoader.Font,"01234\n56789","0",TextAlignment.CENTER);
                 AddSprite(scoreDisplay);
-                highScoreLabel = new ScreenSprite(ScreenSprite.ScreenSpriteAnchor.TopLeft, new Vector2(Size.X/2, Size.Y * 0.45f),1f, Vector2.Zero, Color.White,"Monospace", "High Score", TextAlignment.CENTER,SpriteType.TEXT);
+                highScoreLabel = new ScreenSprite(ScreenSprite.ScreenSpriteAnchor.TopLeft, new Vector2(Size.X/2, Size.Y * 0.45f),1f, Vector2.Zero, Color.White,"Monospace", "Best", TextAlignment.CENTER,SpriteType.TEXT);
                 AddSprite(highScoreLabel);
                 highScoreLabel.Visible = false;
                 highScoreDisplay = new BitmapFontSprite(new Vector2(Size.X / 2, Size.Y * 0.55f), SpriteLoader.Font, "01234\n56789", HighScore.ToString(), TextAlignment.CENTER);

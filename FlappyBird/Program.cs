@@ -24,6 +24,7 @@ namespace IngameScript
     {
         //=======================================================================
         FlappyGame game;
+        Sign sign;
         public Program()
         {
             Echo("Flappy Bird Booting.....");
@@ -31,6 +32,7 @@ namespace IngameScript
             GridBlocks.InitBlocks(GridTerminalSystem);
             Runtime.UpdateFrequency = UpdateFrequency.Update1;
             game = new FlappyGame(GridBlocks.GetTextSurface("Main Display"));
+            sign = new Sign(GridBlocks.GetTextSurface("Sign"));
             Echo("FlappyGame Initialized");
         }
 
@@ -42,6 +44,7 @@ namespace IngameScript
         public void Main(string argument, UpdateType updateSource)
         {
             game.Main(argument);
+            sign.Draw();
         }
         //=======================================================================
     }
